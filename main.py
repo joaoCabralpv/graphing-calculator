@@ -1,6 +1,17 @@
 from collections.abc import Callable
 from enum import Enum
 
+class SymbolType(Enum):
+    NONE=0
+    NUMBER=1
+    OPERATOR=2
+    OPEN_PARENTHESIS=3
+    CLOSED_PARENTHESIS=4
+
+class ParenthesisType(Enum):
+    OPEN=0
+    CLOSED=1
+
 class Operator:
     func:Callable
     n_arguments:int
@@ -16,14 +27,25 @@ class Operator:
     def __str__(self):
         return self.string
 
+class Parenthesis:
+    type:ParenthesisType
+    precedence:int
     
+    def __init__(self,type:ParenthesisType):
+        self.precedence=0
+        self.type=type
 
-class SymbolType(Enum):
-    NONE=0
-    NUMBER=1
-    OPERATOR=2
-    OPEN_PARENTHESIS=3
-    CLOSED_PARENTHESIS=4
+    def __str__(self):
+        
+        if self.type==ParenthesisType.OPEN:
+            return "("
+        if self.type==ParenthesisType.CLOSED:
+            return ")"
+        return "Secret third parenthesis type(something is wrong)"
+            
+
+
+
     
 class Symbol:
     represented = None
@@ -40,10 +62,10 @@ class Symbol:
         return Symbol(f,SymbolType.NUMBER)
     
     def open_parenthesis():
-        return Symbol(None,SymbolType.OPEN_PARENTHESIS)
+        return Symbol(Parenthesis(ParenthesisType.OPEN),SymbolType.OPEN_PARENTHESIS)
     
     def closed_parenthesis():
-        return Symbol(None,SymbolType.CLOSED_PARENTHESIS)
+        return Symbol(Parenthesis(ParenthesisType.CLOSED),SymbolType.CLOSED_PARENTHESIS)
     
     def __str__(self):
         return str(self.represented)
@@ -74,10 +96,11 @@ def create_symbol_list(input:str):
             while i < len(input) and (input[i].isnumeric() or input[i] == "."):
                 chars.append(input[i])
                 i+=1
+                joined="".join(chars)
             try:
-                symbol_list.append(Symbol.from_float(float("".join(chars))))    
+                symbol_list.append(Symbol.from_float(float(joined)))
             except:
-                print(f"Innalid number f: {"".join(chars)}")
+                print(f"Innalid number {joined} ")
                 return
             continue
 
@@ -104,10 +127,12 @@ def create_symbol_list(input:str):
         if input[i] == "(":
             i+=1
             symbol_list.append(Symbol.open_parenthesis())
+            continue
 
-        if input[i] == "(":
+        if input[i] == ")":
             i+=1
             symbol_list.append(Symbol.closed_parenthesis())
+            continue
         
 
         print(f"Unknown symbol: {input[i]}")
@@ -137,6 +162,23 @@ def create_rpn_stack(symbol_stack):
                 output.append(holding_stack.pop())
             holding_stack.append(symbol)
             continue
+
+        if symbol.type==SymbolType.OPEN_PARENTHESIS:
+            holding_stack.append(symbol)
+        
+        if symbol.type==SymbolType.CLOSED_PARENTHESIS:
+            
+            while True:
+                if len(holding_stack)==0:
+                    print("Unmatched parenthesis")
+                    return
+                
+                last=holding_stack.pop()
+                if last.type==SymbolType.OPERATOR:
+                    output.append(last)
+
+                if last.type==SymbolType.OPEN_PARENTHESIS:
+                    break
 
     while holding_stack:
         output.append(holding_stack.pop())
@@ -179,5 +221,5 @@ def compute(rpn_stack):
     return solve_stack[0]
 
 "5*54+5.4-5+.6"
-out=compute(create_rpn_stack(create_symbol_list("5*54+(5.4/5)+.6")))
+out=compute(create_rpn_stack(create_symbol_list("(77-4*4)/(54-51)")))
 print(out)
