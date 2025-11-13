@@ -4,9 +4,9 @@ from enum import Enum
 class SymbolType(Enum):
     NONE=0
     NUMBER=1
-    OPERATOR=2
-    OPEN_PARENTHESIS=3
-    CLOSED_PARENTHESIS=4
+    BINARY_OPERATOR=2
+    OPEN_PARENTHESIS=4
+    CLOSED_PARENTHESIS=5
 
 class ParenthesisType(Enum):
     OPEN=0
@@ -56,7 +56,7 @@ class Symbol:
         self.type=type
 
     def from_operator(op:Operator):
-        return Symbol(op,SymbolType.OPERATOR)
+        return Symbol(op,SymbolType.BINARY_OPERATOR)
     
     def from_float(f:float):
         return Symbol(f,SymbolType.NUMBER)
@@ -89,6 +89,7 @@ rpn_stack:list[Symbol] =[Symbol.from_float(22),Symbol.from_operator(operators["u
 def create_symbol_list(input:str):
     symbol_list:list[Symbol] = []
     i=0
+    last_type=SymbolType.NONE
     while i < len(input):
 
         if input[i].isnumeric() or input[i] == ".":
@@ -102,36 +103,46 @@ def create_symbol_list(input:str):
             except:
                 print(f"Innalid number {joined} ")
                 return
+            last_type=SymbolType.NUMBER
             continue
 
         if input[i] == "+":
             symbol_list.append(Symbol.from_operator(operators["+"]))
             i+=1
+            last_type=SymbolType.BINARY_OPERATOR
             continue
 
         if input[i] == "*":
             symbol_list.append(Symbol.from_operator(operators["*"]))
             i+=1
+            last_type=SymbolType.BINARY_OPERATOR
             continue
 
         if input[i] == "/":
             symbol_list.append(Symbol.from_operator(operators["/"]))
             i+=1
+            last_type=SymbolType.BINARY_OPERATOR
             continue
 
         if input[i] == "-":
-            symbol_list.append(Symbol.from_operator(operators["-"]))
+            if last_type==SymbolType.NUMBER or last_type==SymbolType.CLOSED_PARENTHESIS:
+                symbol_list.append(Symbol.from_operator(operators["-"]))
+                last_type=SymbolType.BINARY_OPERATOR
+            else:
+                symbol_list.append(Symbol.from_operator(operators["u-"]))
             i+=1
             continue
 
         if input[i] == "(":
             i+=1
             symbol_list.append(Symbol.open_parenthesis())
+            last_type=SymbolType.OPEN_PARENTHESIS
             continue
 
         if input[i] == ")":
             i+=1
             symbol_list.append(Symbol.closed_parenthesis())
+            last_type=SymbolType.CLOSED_PARENTHESIS
             continue
         
 
@@ -153,7 +164,7 @@ def create_rpn_stack(symbol_stack):
             output.append(symbol)
             continue
 
-        if symbol.type == SymbolType.OPERATOR:
+        if symbol.type == SymbolType.BINARY_OPERATOR:
             if len(holding_stack) == 0:
                 holding_stack.append(symbol)
                 continue
@@ -174,7 +185,7 @@ def create_rpn_stack(symbol_stack):
                     return
                 
                 last=holding_stack.pop()
-                if last.type==SymbolType.OPERATOR:
+                if last.type==SymbolType.BINARY_OPERATOR:
                     output.append(last)
 
                 if last.type==SymbolType.OPEN_PARENTHESIS:
@@ -205,7 +216,7 @@ def compute(rpn_stack):
             while len(rpn_stack) > 0 and rpn_stack[len(rpn_stack)].type != SymbolType.OPEN_PARENTHESIS:
                 solve_stack.append()
 
-        if symbol.type == SymbolType.OPERATOR:
+        if symbol.type == SymbolType.BINARY_OPERATOR:
             operator = symbol.represented
             func = operator.func
             n_arguments = operator.n_arguments
@@ -220,6 +231,5 @@ def compute(rpn_stack):
 
     return solve_stack[0]
 
-"5*54+5.4-5+.6"
-out=compute(create_rpn_stack(create_symbol_list("(77-4*4)/(54-51)")))
+out=compute(create_rpn_stack(create_symbol_list("(1)-(1/3)")))
 print(out)
