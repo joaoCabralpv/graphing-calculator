@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from enum import Enum
+from math import floor
 
 class SymbolType(Enum):
     NONE=0
@@ -101,8 +102,7 @@ def create_symbol_list(input:str):
             try:
                 symbol_list.append(Symbol.from_float(float(joined)))
             except:
-                print(f"Innalid number {joined} ")
-                return
+                return f"Invalid number {joined} "
             last_type=SymbolType.NUMBER
             continue
 
@@ -146,13 +146,14 @@ def create_symbol_list(input:str):
             continue
         
 
-        print(f"Unknown symbol: {input[i]}")
-        return
+        return(f" Unknown symbol: {input[i]}")
 
     return symbol_list
 
 
 def create_rpn_stack(symbol_stack):
+    if isinstance(symbol_stack,str):
+        return symbol_stack
     holding_stack:list[Symbol]=[]
     output:list[Symbol]=[]
 
@@ -181,8 +182,7 @@ def create_rpn_stack(symbol_stack):
             
             while True:
                 if len(holding_stack)==0:
-                    print("Unmatched parenthesis")
-                    return
+                    return(" Unmatched parenthesis")
                 
                 last=holding_stack.pop()
                 if last.type==SymbolType.BINARY_OPERATOR:
@@ -198,10 +198,12 @@ def create_rpn_stack(symbol_stack):
 
 
 def compute(rpn_stack):
+    if isinstance(rpn_stack,str):
+        return rpn_stack
     solve_stack:list = []
 
     if not rpn_stack:
-        return
+        return "Empty expression"
 
     for symbol in rpn_stack:
         if symbol.type == SymbolType.NUMBER:
@@ -226,10 +228,19 @@ def compute(rpn_stack):
                 list_arguments.append(solve_stack.pop())
 
             list_arguments.reverse()
-            solve_stack.append(func(list_arguments))
+            try:
+                solve_stack.append(func(list_arguments))
+            except:
+                return " Math error"
 
+    if len(solve_stack) != 1:
+        return " Stack size is not 1 at the end"
+    
+    result=solve_stack[0]
+    if floor(result) == result:
+        result = int(result)
+    return "="+str(result)
 
-    return solve_stack[0]
+def solve(s):
+    return compute(create_rpn_stack(create_symbol_list(s)))
 
-out=compute(create_rpn_stack(create_symbol_list("(1)-(1/3)")))
-print(out)
