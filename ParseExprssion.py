@@ -93,13 +93,14 @@ operators:dict[str,Operator] = {
     "-": Operator(lambda a: a[0]-a[1],2,1,"-"),
     "*": Operator(lambda a: a[0]*a[1],2,2,"*"),
     "/": Operator(lambda a: a[0]/a[1],2,2,"/"),
+    "^": Operator(lambda a: a[0]**a[1],2,3,"^"),
     "u-":Operator(lambda a: -a[0],1,999,"u-")
 }
 
 
 
 
-rpn_stack:list[Symbol] =[Symbol.from_float(22),Symbol.from_operator(operators["u-"]),Symbol.from_float(3),Symbol.from_operator(operators["+"])]
+#rpn_stack:list[Symbol] =[Symbol.from_float(22),Symbol.from_operator(operators["u-"]),Symbol.from_float(3),Symbol.from_operator(operators["+"])]
 
 def create_symbol_list(input:str):
     symbol_list:list[Symbol] = []
@@ -119,7 +120,7 @@ def create_symbol_list(input:str):
             try:
                 symbol_list.append(Symbol.from_float(float(joined)))
             except:
-                return f"Invalid number {joined} "
+                return (f"Invalid number {joined} ",{})
             last_type=SymbolType.NUMBER
             continue
 
@@ -150,6 +151,12 @@ def create_symbol_list(input:str):
             i+=1
             continue
 
+        if input[i] == "^":
+            symbol_list.append(Symbol.from_operator(operators["^"]))
+            i+=1
+            last_type=SymbolType.BINARY_OPERATOR
+            continue
+
         if input[i] == "(":
             i+=1
             symbol_list.append(Symbol.open_parenthesis())
@@ -173,7 +180,7 @@ def create_symbol_list(input:str):
             continue
         
 
-        return(f" Unknown symbol: {input[i]}")
+        return(f" Unknown symbol: {input[i]}",{})
 
     return (symbol_list,variable_dict)
 
@@ -185,7 +192,7 @@ def create_rpn_stack(symbol_stack):
     output:list[Symbol]=[]
 
     if not symbol_stack:
-        return
+        return (None,{})
 
     for symbol in symbol_stack:
         if symbol.type == SymbolType.NUMBER or symbol.type == SymbolType.VARIABLE:
@@ -209,7 +216,7 @@ def create_rpn_stack(symbol_stack):
             
             while True:
                 if len(holding_stack)==0:
-                    return(" Unmatched parenthesis")
+                    return(" Unmatched parenthesis",{})
                 
                 last=holding_stack.pop()
                 if last.type==SymbolType.BINARY_OPERATOR:
@@ -259,7 +266,7 @@ def compute(rpn_stack):
                 try:
                     list_arguments.append(solve_stack.pop())
                 except:
-                    return "Operator with missing arguments"
+                    return ("Operator with missing arguments")
 
             list_arguments.reverse()
             try:
