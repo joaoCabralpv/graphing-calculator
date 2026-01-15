@@ -8,6 +8,7 @@ class SymbolType(Enum):
     BINARY_OPERATOR=2
     OPEN_PARENTHESIS=4
     CLOSED_PARENTHESIS=5
+    VARIABLE=6
 
 class ParenthesisType(Enum):
     OPEN=0
@@ -43,10 +44,20 @@ class Parenthesis:
         if self.type==ParenthesisType.CLOSED:
             return ")"
         return "Secret third parenthesis type(something is wrong)"
-            
+        
 
-
-
+class Variable:
+    value:None
+    name:None
+    def __init__(self,name:str):
+        self.name=name
+        self.value=None
+    def set_value(self,value:float):
+        self.value=value
+    def __float__(self):
+        return self.value
+    def __str__(self):
+        return self.name
     
 class Symbol:
     represented = None
@@ -67,6 +78,9 @@ class Symbol:
     
     def closed_parenthesis():
         return Symbol(Parenthesis(ParenthesisType.CLOSED),SymbolType.CLOSED_PARENTHESIS)
+    
+    def variable(name:str):
+        return Symbol(Variable(name),SymbolType.VARIABLE)
     
     def __str__(self):
         return str(self.represented)
@@ -91,6 +105,9 @@ def create_symbol_list(input:str):
     symbol_list:list[Symbol] = []
     i=0
     last_type=SymbolType.NONE
+
+    variable_dict={}
+
     while i < len(input):
 
         if input[i].isnumeric() or input[i] == ".":
@@ -144,11 +161,21 @@ def create_symbol_list(input:str):
             symbol_list.append(Symbol.closed_parenthesis())
             last_type=SymbolType.CLOSED_PARENTHESIS
             continue
+
+        if input[i].isalpha():
+            if input[i] in variable_dict.keys():
+                symbol_list.append(variable_dict[input[i]])
+            else:
+                var=Symbol.variable(input[i])
+                variable_dict.update({input[i]:var})
+                symbol_list.append(var)
+            i+=1
+            continue
         
 
         return(f" Unknown symbol: {input[i]}")
 
-    return symbol_list
+    return (symbol_list,variable_dict)
 
 
 def create_rpn_stack(symbol_stack):
@@ -161,7 +188,7 @@ def create_rpn_stack(symbol_stack):
         return
 
     for symbol in symbol_stack:
-        if symbol.type == SymbolType.NUMBER:
+        if symbol.type == SymbolType.NUMBER or symbol.type == SymbolType.VARIABLE:
             output.append(symbol)
             continue
 
@@ -209,6 +236,10 @@ def compute(rpn_stack):
         if symbol.type == SymbolType.NUMBER:
             solve_stack.append(symbol.represented)
             continue
+    
+        if symbol.type ==SymbolType.VARIABLE:
+            value=symbol.represented.value
+            solve_stack.append(value)
 
         if symbol.type == SymbolType.OPEN_PARENTHESIS:
             solve_stack.append("(")
@@ -225,7 +256,10 @@ def compute(rpn_stack):
             list_arguments = []
 
             for i in range(n_arguments):
-                list_arguments.append(solve_stack.pop())
+                try:
+                    list_arguments.append(solve_stack.pop())
+                except:
+                    return "Operator with missing arguments"
 
             list_arguments.reverse()
             try:
@@ -239,8 +273,20 @@ def compute(rpn_stack):
     result=solve_stack[0]
     if floor(result) == result:
         result = int(result)
-    return "="+str(result)
+    return result
 
 def solve(s):
-    return compute(create_rpn_stack(create_symbol_list(s)))
+    symbols,_ = create_symbol_list(s)
+    return compute(create_rpn_stack(symbols))
 
+def create_rpn_stack_for_function(string):
+    symbols, variables = create_symbol_list(string)
+    rpn_stack = create_rpn_stack(symbols)
+    return (lambda: compute(rpn_stack), variables)
+
+if __name__ == "__main__":
+    func, variables = create_rpn_stack_for_function("2*x*x+2+4*x+3")
+    variables["x"].represented.set_value(4)
+    print(func())
+    variables["x"].represented.set_value(5)
+    print(func())

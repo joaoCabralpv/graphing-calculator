@@ -91,8 +91,7 @@ while dpg.is_dearpygui_running():
         #print("input")
         result=(solve(dpg.get_value("input")))
         with dpg.group(horizontal=True,parent=scientific,before="input"):
-            print(expression)
-            dpg.add_text(str(dpg.get_value("input"))+str(result))
+            dpg.add_text(str(dpg.get_value("input"))+"="+str(result))
             dpg.set_value("input","")
 
         #dpg.add_text(solve(dpg.get_value(expression)),parent=main,before="input")
