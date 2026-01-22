@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from enum import Enum
 from math import floor
+from time import time
+from math import sin
 
 class SymbolType(Enum):
     NONE=0
@@ -9,6 +11,7 @@ class SymbolType(Enum):
     OPEN_PARENTHESIS=4
     CLOSED_PARENTHESIS=5
     VARIABLE=6
+    UNARY_OPERATOR=7
 
 class ParenthesisType(Enum):
     OPEN=0
@@ -143,12 +146,13 @@ def create_symbol_list(input:str):
             continue
 
         if input[i] == "-":
-            if last_type==SymbolType.NUMBER or last_type==SymbolType.CLOSED_PARENTHESIS:
+            if last_type==SymbolType.NUMBER or last_type==SymbolType.CLOSED_PARENTHESIS or last_type==SymbolType.VARIABLE:
                 symbol_list.append(Symbol.from_operator(operators["-"]))
                 last_type=SymbolType.BINARY_OPERATOR
             else:
                 symbol_list.append(Symbol.from_operator(operators["u-"]))
             i+=1
+            last_type=SymbolType.UNARY_OPERATOR
             continue
 
         if input[i] == "^":
@@ -177,6 +181,7 @@ def create_symbol_list(input:str):
                 variable_dict.update({input[i]:var})
                 symbol_list.append(var)
             i+=1
+            last_type=SymbolType.VARIABLE
             continue
         
 
@@ -292,8 +297,6 @@ def create_rpn_stack_for_function(string):
     return (lambda: compute(rpn_stack), variables)
 
 if __name__ == "__main__":
-    func, variables = create_rpn_stack_for_function("2*x*x+2+4*x+3")
-    variables["x"].represented.set_value(4)
-    print(func())
-    variables["x"].represented.set_value(5)
-    print(func())
+    s,_=create_symbol_list("(x-1)^5")
+    for a in s:
+        print(a)

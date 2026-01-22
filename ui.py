@@ -1,7 +1,7 @@
 import dearpygui.dearpygui as dpg
-from ParseExprssion import solve
+from ParseExprssion import *
 from Plot import *
-from math import sin
+from math import floor,ceil
 
 dpg.create_context()
 
@@ -35,12 +35,10 @@ with dpg.window(tag="Scientific") as scientific:
     print(expression)
     
 
-# creating data
-sindatax = []
-sindatay = []
-for i in range(0, 500):
-    sindatax.append(i / 1000)
-    sindatay.append(0.5 + 0.5 * sin(50 * i / 1000))
+# plot data
+x_list = []
+y_list = []
+
 
 with dpg.window(tag="Plot") as plot:
 
@@ -62,13 +60,13 @@ with dpg.window(tag="Plot") as plot:
                 dpg.add_plot_legend()
 
                 # REQUIRED: create x and y axes
-                dpg.add_plot_axis(dpg.mvXAxis, label="x")
+                dpg.add_plot_axis(dpg.mvXAxis, label="x",tag="x_axis")
                 dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="y_axis")
 
                 # series belong to a y axis
-                dpg.add_line_series(sindatax, sindatay, label="0.5 + 0.5 * sin(x)", parent="y_axis")
+                dpg.add_line_series(x_list, y_list, parent="y_axis",tag="plot1")
 
-    dpg.add_input_text(parent="functions")
+    dpg.add_input_text(parent="functions",tag="function_expression")
 
     #expression=dpg.add_input_text()
     #dpg.add_text("plot")
@@ -93,6 +91,29 @@ while dpg.is_dearpygui_running():
         with dpg.group(horizontal=True,parent=scientific,before="input"):
             dpg.add_text(str(dpg.get_value("input"))+"="+str(result))
             dpg.set_value("input","")
+        
+    elif current_window == plot:
+        input=dpg.get_value("function_expression")
+        f,var = create_rpn_stack_for_function(input)
+        x_list=[]
+        y_list=[]
+        x_min,x_max=dpg.get_axis_limits("x_axis")
+        #print(dpg.get_axis_limits("x_axis"))
+        try:
+            for x in range(floor(x_min*100),ceil(x_max*100)):
+                #print(1)
+                x/=100
+                var["x"].represented.set_value(x)
+                x_list.append(x)
+                y_list.append(f())
+            #print(x_list)
+            #print(y_list)
+            dpg.set_value("plot1",[x_list, y_list])
+        except:
+            pass
+
+            
+
 
         #dpg.add_text(solve(dpg.get_value(expression)),parent=main,before="input")
 
