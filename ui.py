@@ -103,14 +103,17 @@ while dpg.is_dearpygui_running():
             for x in range(floor(x_min*100),ceil(x_max*100)):
                 #print(1)
                 x/=100
-                var["x"].represented.set_value(x)
+                try:
+                    var["x"].represented.set_value(x)
+                except:
+                    pass
                 x_list.append(x)
                 y_list.append(f())
             #print(x_list)
             #print(y_list)
-            dpg.set_value("plot1",[x_list, y_list])
         except:
-            pass
+            print(input)
+        dpg.set_value("plot1",[x_list, y_list])
 
             
 
