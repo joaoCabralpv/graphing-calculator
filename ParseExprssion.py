@@ -2,7 +2,7 @@ from collections.abc import Callable
 from enum import Enum
 from math import floor
 from time import time
-from math import sin
+import math
 
 class SymbolType(Enum):
     NONE=0
@@ -11,7 +11,8 @@ class SymbolType(Enum):
     OPEN_PARENTHESIS=4
     CLOSED_PARENTHESIS=5
     VARIABLE=6
-    UNARY_OPERATOR=7
+    FUNCTION=7
+    
 
 class ParenthesisType(Enum):
     OPEN=0
@@ -85,8 +86,12 @@ class Symbol:
     def variable(name:str):
         return Symbol(Variable(name),SymbolType.VARIABLE)
     
+    def function(f):
+        return Symbol(f,SymbolType.FUNCTION)
+    
     def __str__(self):
         return str(self.represented)
+    
 
 
         
@@ -100,12 +105,18 @@ operators:dict[str,Operator] = {
     "u-":Operator(lambda a: -a[0],1,999,"u-")
 }
 
+functions = {
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+}
+
 
 
 
 #rpn_stack:list[Symbol] =[Symbol.from_float(22),Symbol.from_operator(operators["u-"]),Symbol.from_float(3),Symbol.from_operator(operators["+"])]
 
-def create_symbol_list(input:str):
+def create_symbol_list(input:str, vars:list[str]=[]):
     symbol_list:list[Symbol] = []
     i=0
     last_type=SymbolType.NONE
@@ -152,7 +163,7 @@ def create_symbol_list(input:str):
             else:
                 symbol_list.append(Symbol.from_operator(operators["u-"]))
             i+=1
-            last_type=SymbolType.UNARY_OPERATOR
+            last_type=SymbolType.FUNCTION
             continue
 
         if input[i] == "^":
@@ -172,8 +183,9 @@ def create_symbol_list(input:str):
             symbol_list.append(Symbol.closed_parenthesis())
             last_type=SymbolType.CLOSED_PARENTHESIS
             continue
-
-        if input[i].isalpha():
+        
+        if input[i].isalpha() and input[i] in vars:
+            # Variable
             if input[i] in variable_dict.keys():
                 symbol_list.append(variable_dict[input[i]])
             else:
@@ -183,9 +195,18 @@ def create_symbol_list(input:str):
             i+=1
             last_type=SymbolType.VARIABLE
             continue
-        
 
-        return(f" Unknown symbol: {input[i]}",{})
+        else:
+            #Check for function
+            name=""
+            while input[i] != "(":
+                name+=input[i]
+                i+=1
+            if name in functions:
+                symbol_list.append(Symbol.function(functions[name]))
+                continue
+            else:
+                return(f" Unknown symbol: {input[i]}",{})
 
     return (symbol_list,variable_dict)
 
@@ -297,6 +318,6 @@ def create_rpn_stack_for_function(string):
     return (lambda: compute(rpn_stack), variables)
 
 if __name__ == "__main__":
-    s,_=create_symbol_list("(x-1)^5")
+    s,_=create_symbol_list("tan(x-1)^5",["x"])
     for a in s:
         print(a)
