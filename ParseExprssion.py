@@ -7,7 +7,7 @@ import math
 class SymbolType(Enum):
     NONE=0
     NUMBER=1
-    BINARY_OPERATOR=2
+    OPERATOR=2
     OPEN_PARENTHESIS=4
     CLOSED_PARENTHESIS=5
     VARIABLE=6
@@ -72,7 +72,7 @@ class Symbol:
         self.type=type
 
     def from_operator(op:Operator):
-        return Symbol(op,SymbolType.BINARY_OPERATOR)
+        return Symbol(op,SymbolType.OPERATOR)
     
     def from_float(f:float):
         return Symbol(f,SymbolType.NUMBER)
@@ -117,6 +117,7 @@ functions = {
 #rpn_stack:list[Symbol] =[Symbol.from_float(22),Symbol.from_operator(operators["u-"]),Symbol.from_float(3),Symbol.from_operator(operators["+"])]
 
 def create_symbol_list(input:str, vars:list[str]=[]):
+    print(vars)
     symbol_list:list[Symbol] = []
     i=0
     last_type=SymbolType.NONE
@@ -141,25 +142,25 @@ def create_symbol_list(input:str, vars:list[str]=[]):
         if input[i] == "+":
             symbol_list.append(Symbol.from_operator(operators["+"]))
             i+=1
-            last_type=SymbolType.BINARY_OPERATOR
+            last_type=SymbolType.OPERATOR
             continue
 
         if input[i] == "*":
             symbol_list.append(Symbol.from_operator(operators["*"]))
             i+=1
-            last_type=SymbolType.BINARY_OPERATOR
+            last_type=SymbolType.OPERATOR
             continue
 
         if input[i] == "/":
             symbol_list.append(Symbol.from_operator(operators["/"]))
             i+=1
-            last_type=SymbolType.BINARY_OPERATOR
+            last_type=SymbolType.OPERATOR
             continue
 
         if input[i] == "-":
             if last_type==SymbolType.NUMBER or last_type==SymbolType.CLOSED_PARENTHESIS or last_type==SymbolType.VARIABLE:
                 symbol_list.append(Symbol.from_operator(operators["-"]))
-                last_type=SymbolType.BINARY_OPERATOR
+                last_type=SymbolType.OPERATOR
             else:
                 symbol_list.append(Symbol.from_operator(operators["u-"]))
             i+=1
@@ -169,7 +170,7 @@ def create_symbol_list(input:str, vars:list[str]=[]):
         if input[i] == "^":
             symbol_list.append(Symbol.from_operator(operators["^"]))
             i+=1
-            last_type=SymbolType.BINARY_OPERATOR
+            last_type=SymbolType.OPERATOR
             continue
 
         if input[i] == "(":
@@ -199,14 +200,15 @@ def create_symbol_list(input:str, vars:list[str]=[]):
         else:
             #Check for function
             name=""
-            while input[i] != "(":
+            while i < len(input) and input[i] != "(":
                 name+=input[i]
                 i+=1
             if name in functions:
                 symbol_list.append(Symbol.function(functions[name]))
+                last_type=SymbolType.FUNCTION
                 continue
             else:
-                return(f" Unknown symbol: {input[i]}",{})
+                return(f" Unknown symbol",{})
 
     return (symbol_list,variable_dict)
 
@@ -221,11 +223,12 @@ def create_rpn_stack(symbol_stack):
         return (None,{})
 
     for symbol in symbol_stack:
+
         if symbol.type == SymbolType.NUMBER or symbol.type == SymbolType.VARIABLE:
             output.append(symbol)
             continue
 
-        if symbol.type == SymbolType.BINARY_OPERATOR:
+        if symbol.type == SymbolType.OPERATOR or symbol.type == SymbolType.FUNCTION:
             if len(holding_stack) == 0:
                 holding_stack.append(symbol)
                 continue
@@ -245,7 +248,7 @@ def create_rpn_stack(symbol_stack):
                     return(" Unmatched parenthesis",{})
                 
                 last=holding_stack.pop()
-                if last.type==SymbolType.BINARY_OPERATOR:
+                if last.type==SymbolType.OPERATOR:
                     output.append(last)
 
                 if last.type==SymbolType.OPEN_PARENTHESIS:
@@ -282,7 +285,7 @@ def compute(rpn_stack):
             while len(rpn_stack) > 0 and rpn_stack[len(rpn_stack)].type != SymbolType.OPEN_PARENTHESIS:
                 solve_stack.append()
 
-        if symbol.type == SymbolType.BINARY_OPERATOR:
+        if symbol.type == SymbolType.OPERATOR:
             operator = symbol.represented
             func = operator.func
             n_arguments = operator.n_arguments
@@ -299,6 +302,18 @@ def compute(rpn_stack):
                 solve_stack.append(func(list_arguments))
             except:
                 return " Math error"
+            
+        if symbol.type == SymbolType.FUNCTION:
+            function=symbol.represented
+            try:
+                input_value=solve_stack.pop()
+            except:
+                return " Operator with missing arguments"
+            try: 
+                solve_stack.append(function(input_value))
+            except:
+                return "Math error"
+
 
     if len(solve_stack) != 1:
         return " Stack size is not 1 at the end"
@@ -312,12 +327,14 @@ def solve(s):
     symbols,_ = create_symbol_list(s)
     return compute(create_rpn_stack(symbols))
 
-def create_rpn_stack_for_function(string):
-    symbols, variables = create_symbol_list(string)
+def create_rpn_stack_for_function(string,vars):
+    symbols, variables = create_symbol_list(string,vars=vars)
     rpn_stack = create_rpn_stack(symbols)
+    for s in rpn_stack:
+        print(s,end="")
+        print()
     return (lambda: compute(rpn_stack), variables)
 
 if __name__ == "__main__":
-    s,_=create_symbol_list("tan(x-1)^5",["x"])
-    for a in s:
-        print(a)
+    s=compute(create_rpn_stack(create_symbol_list("sin(3.1415967189)")[0] ))
+    print(s)

@@ -78,6 +78,7 @@ dpg.create_viewport(title='Calculator', width=600, height=200)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.set_primary_window("Scientific", True)
+dpg.show_style_editor()
 
 
 while dpg.is_dearpygui_running():
@@ -94,7 +95,7 @@ while dpg.is_dearpygui_running():
         
     elif current_window == plot:
         input=dpg.get_value("function_expression")
-        f,var = create_rpn_stack_for_function(input)
+        f,var = create_rpn_stack_for_function(input,"x")
         x_list=[]
         y_list=[]
         x_min,x_max=dpg.get_axis_limits("x_axis")
@@ -111,9 +112,9 @@ while dpg.is_dearpygui_running():
                 y_list.append(f())
             #print(x_list)
             #print(y_list)
+            dpg.set_value("plot1",[x_list, y_list])
         except:
             print(input)
-        dpg.set_value("plot1",[x_list, y_list])
 
             
 
