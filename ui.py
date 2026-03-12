@@ -1,12 +1,28 @@
 import PySide6
 from PySide6 import QtWidgets
+from PySide6.QtGui import QAction
 import sys
 import ParseExprssion
 
-class MainWindow(QtWidgets.QMainWindow):
+def toolbar_func():
+
+    toolbar=QtWidgets.QToolBar("Toolbar")
+    toolbar.setContextMenuPolicy(PySide6.QtCore.Qt.PreventContextMenu)
+    
+
+    button_scientific = QAction("Scientific",toolbar)
+    button_scientific.setStatusTip("scientific")
+    button_scientific.triggered.connect(toolbar_button_clicked)
+    toolbar.addAction(button_scientific)
+
+    return toolbar
+
+def toolbar_button_clicked(s):
+    window=Scientific()
+    window.show()
+
+class Scientific(QtWidgets.QMainWindow):
     def __init__(self):
-
-
         super().__init__()
         self.setWindowTitle("Calculator")
 
@@ -29,6 +45,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(self.scrollArea)
 
+        # Toolbar
+        toolbar=toolbar_func()
+        self.addToolBar(toolbar)
+
+        
     def expression_entered(self):
         text=self.current_line_edit.text()
         if text == "":
@@ -41,11 +62,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_connection = self.current_line_edit.returnPressed.connect(self.expression_entered)
         self.vbox.addWidget(self.current_line_edit)
         
-        print(text)
-        
+
+class Plot(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        label=QtWidgets.QLabel("Test")
+        self.setCentralWidget(label)
+
 
 
 calc=QtWidgets.QApplication(sys.argv)
-window=MainWindow()
+window=Scientific()
 window.show()
 calc.exec()

@@ -117,7 +117,7 @@ functions = {
 #rpn_stack:list[Symbol] =[Symbol.from_float(22),Symbol.from_operator(operators["u-"]),Symbol.from_float(3),Symbol.from_operator(operators["+"])]
 
 def create_symbol_list(input:str, vars:list[str]=[]):
-    print(vars)
+    #print(vars)
     symbol_list:list[Symbol] = []
     i=0
     last_type=SymbolType.NONE
